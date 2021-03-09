@@ -126,7 +126,7 @@ public class ChangeAtlasTestRule extends CoreTestRule
             @Point(id = "2000000", coordinates = @Loc(value = TWO)),
             @Point(id = "3000000", coordinates = @Loc(value = THREE)) }, lines = {
                     @Line(id = "1000000", coordinates = { @Loc(value = ONE), @Loc(value = TWO),
-                            @Loc(value = THREE) }) })
+                            @Loc(value = THREE) }, tags = { "name=Something" }) })
     private Atlas geometryChangeAtlas;
 
     public Atlas differentNodeAndEdgeProperties1()

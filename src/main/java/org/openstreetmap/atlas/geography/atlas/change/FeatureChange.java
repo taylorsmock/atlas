@@ -17,8 +17,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnull;
-
 import org.openstreetmap.atlas.exception.CoreException;
 import org.openstreetmap.atlas.exception.change.FeatureChangeMergeException;
 import org.openstreetmap.atlas.exception.change.MergeFailureType;
@@ -88,6 +86,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      * The collection will be empty, have one item, or have multiple items.
      */
     private Collection<LocationItem> nodes;
+    private Map<String, String> originalTags;
 
     /**
      * Create a new {@link ChangeType#ADD} {@link FeatureChange} with a given afterView. The
@@ -155,6 +154,38 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
     public static FeatureChange remove(final AtlasEntity reference, final Atlas atlasContext)
     {
         return new FeatureChange(ChangeType.REMOVE, reference).withAtlasContext(atlasContext);
+    }
+
+    /**
+     * Check if the entity can be part of a geometry change
+     *
+     * @param entity
+     *            The entity to check (should be a CompleteLineItem or CompleteLocationItem)
+     * @return {@code true} if there are indications that the entity may be used for a geometry
+     *         change
+     */
+    private static boolean canBeGeometryChange(final AtlasEntity entity)
+    {
+        return (entity instanceof CompleteLineItem
+                && ((CompleteLineItem<?>) entity).getGeometry() != null)
+                || (entity instanceof CompleteLocationItem
+                        && ((CompleteLocationItem<?>) entity).getLocation() != null);
+    }
+
+    /**
+     * Get the OSM tags from an entity, {@code null} save
+     * 
+     * @param entity
+     *            The entity to get tags from
+     * @return The tags
+     */
+    private static Map<String, String> getOsmTags(final AtlasEntity entity)
+    {
+        if (entity != null && entity.getTags() != null && entity.getOsmTags() != null)
+        {
+            return entity.getOsmTags();
+        }
+        return Collections.emptyMap();
     }
 
     /**
@@ -332,7 +363,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
     }
 
     @Override
-    public int compareTo(@Nonnull final FeatureChange otherFeatureChange)
+    public int compareTo(final FeatureChange otherFeatureChange)
     {
         return Comparator.comparing(FeatureChange::getChangeType)
                 .thenComparing(FeatureChange::getItemType)
@@ -364,7 +395,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
             throw new CoreException("Cannot explain a FeatureChange with a null afterView!");
         }
         return new ChangeDescription(getIdentifier(), getItemType(), this.beforeView,
-                this.afterView, this.changeType, this.nodes);
+                this.afterView, this.changeType, this.originalTags, this.nodes);
     }
 
     public AtlasEntity getAfterView()
@@ -718,8 +749,40 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      */
     public FeatureChange withAtlasContext(final Atlas atlas)
     {
-        computeBeforeViewUsingAtlasContext(atlas, this.changeType);
-        computeRequiredOpenStreetMapChangeInformation(atlas, this.changeType);
+        this.computeBeforeViewUsingAtlasContext(atlas, this.changeType);
+        // Only run if the geometry is indicated to have changed (this is fairly expensive, so
+        // should not be run normally)
+        if (canBeGeometryChange(this.afterView) || canBeGeometryChange(this.beforeView))
+        {
+            final long identifier = this.afterView.getIdentifier();
+            // Don't keep the original object, as this keeps the atlas alive
+            if (this.afterView instanceof Line)
+            {
+                this.originalTags = getOsmTags(atlas.line(identifier));
+            }
+            else if (this.afterView instanceof Edge)
+            {
+                final Edge edge = atlas.edge(identifier);
+                this.originalTags = null == edge ? null : getOsmTags(edge.getMainEdge());
+            }
+            else if (this.afterView instanceof Point)
+            {
+                this.originalTags = getOsmTags(atlas.point(identifier));
+            }
+            else if (this.afterView instanceof Node)
+            {
+                this.originalTags = getOsmTags(atlas.node(identifier));
+            }
+            else if (this.afterView instanceof Area)
+            {
+                this.originalTags = getOsmTags(atlas.area(identifier));
+            }
+            else if (this.afterView instanceof Relation)
+            {
+                this.originalTags = getOsmTags(atlas.relation(identifier));
+            }
+            this.computeRequiredOpenStreetMapChangeInformation(atlas, this.changeType);
+        }
         return this;
     }
 
@@ -747,7 +810,8 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
                     .mapToLong(AtlasObject::getOsmIdentifier).distinct().count();
             if (possibleNodes == 1)
             {
-                this.nodes.add(locationItems.get(0));
+                // CompletePoint and CompleteNode both extend Point and Node respectively
+                this.nodes.add((LocationItem) CompleteEntity.from(locationItems.get(0)));
             }
             else if (possibleNodes == 0)
             {
@@ -971,7 +1035,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
             final ChangeType changeType)
     {
         final Collection<Location> locationsToFind = new HashSet<>();
-        if (changeType == ChangeType.ADD)
+        if (ChangeType.ADD == changeType)
         {
             if (Arrays.asList(ItemType.AREA, ItemType.EDGE, ItemType.LINE)
                     .contains(this.afterView.getType()))
@@ -986,7 +1050,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
                 locationsToFind.addAll(polyLine);
             }
         }
-        else if (changeType == ChangeType.REMOVE
+        else if (ChangeType.REMOVE == changeType
                 && Arrays.asList(ItemType.AREA, ItemType.EDGE, ItemType.LINE)
                         .contains(this.afterView.getType()))
         // Only add remove points if there is <i>no</i> chance that a point is used by another

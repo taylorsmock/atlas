@@ -1,6 +1,8 @@
 package org.openstreetmap.atlas.geography.atlas.change;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -232,9 +234,11 @@ public class FeatureChangeTest
                 + "{\"name\":\"GEOMETRY\",\"type\":\"ADD\",\"position\":\"1/3\","
                 + "\"afterView\":\"POINT (0 0)\"}],"
                 // The OSC changes
-                + "\"osc\":{\"create\":[{\"id\":-1,\"type\":\"node\",\"lat\":0.0,\"lon\":0.0,\"visible\":true}],"
-                + "\"modify\":[{\"id\":1,\"type\":\"way\",\"nd\":[1,-1,2,3],\"visible\":true}]}"
-                + "}";
+                + "\"osc\":\""
+                + Base64.getEncoder().encodeToString(
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><osmChange generator=\"atlas ChangeDescription v0.0.1\" version=\"0.6\"><create><node id=\"-1\" lat=\"0.0\" lon=\"0.0\" version=\"1\" visible=\"true\"/></create><modify><way id=\"1\" version=\"1\" visible=\"true\"><tag k=\"name\" v=\"Something\"/><nd ref=\"1\"/><nd ref=\"-1\"/><nd ref=\"2\"/><nd ref=\"3\"/></way></modify></osmChange>"
+                                .getBytes(StandardCharsets.UTF_8))
+                + "\"}";
 
         Assert.assertEquals(goldenString, description.toJsonElement().toString());
     }
@@ -262,8 +266,11 @@ public class FeatureChangeTest
                 + "{\"name\":\"GEOMETRY\",\"type\":\"REMOVE\",\"position\":\"0/3\","
                 + "\"beforeView\":\"LINESTRING (-61.336198 15.420563, -61.33285 15.429499)\"}],"
                 // The OSC changes
-                + "\"osc\":{\"modify\":[{\"id\":1,\"type\":\"way\",\"nd\":[3,2,1],\"visible\":true}]}"
-                + "}";
+                + "\"osc\":\""
+                + Base64.getEncoder().encodeToString(
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><osmChange generator=\"atlas ChangeDescription v0.0.1\" version=\"0.6\"><modify><way id=\"1\" version=\"1\" visible=\"true\"><tag k=\"name\" v=\"Something\"/><nd ref=\"3\"/><nd ref=\"2\"/><nd ref=\"1\"/></way></modify></osmChange>"
+                                .getBytes(StandardCharsets.UTF_8))
+                + "\"}";
 
         Assert.assertEquals(goldenString, description.toJsonElement().toString());
     }
@@ -280,11 +287,11 @@ public class FeatureChangeTest
 
         final ChangeDescription description = featureChange1.explain();
 
-        final String goldenString = "{\"type\":\"REMOVE\"," + "\"descriptors\":[],\"osc\":"
-                + "{\"delete\":[{\"id\":1,\"type\":\"way\",\"nd\":[1,2,3],\"visible\":false,\"if-unused\":true},"
-                + "{\"id\":1,\"type\":\"node\",\"visible\":false,\"if-unused\":true},"
-                + "{\"id\":2,\"type\":\"node\",\"visible\":false,\"if-unused\":true},"
-                + "{\"id\":3,\"type\":\"node\",\"visible\":false,\"if-unused\":true}]}" + "}";
+        final String goldenString = "{\"type\":\"REMOVE\"," + "\"descriptors\":[],\"osc\":\""
+                + Base64.getEncoder().encodeToString(
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><osmChange generator=\"atlas ChangeDescription v0.0.1\" version=\"0.6\"><delete><way id=\"1\" if-unused=\"true\" version=\"1\" visible=\"false\"><tag k=\"name\" v=\"Something\"/><nd ref=\"1\"/><nd ref=\"2\"/><nd ref=\"3\"/></way><node id=\"1\" if-unused=\"true\" version=\"1\" visible=\"false\"/><node id=\"2\" if-unused=\"true\" version=\"1\" visible=\"false\"/><node id=\"3\" if-unused=\"true\" version=\"1\" visible=\"false\"/></delete></osmChange>"
+                                .getBytes(StandardCharsets.UTF_8))
+                + "\"}";
 
         Assert.assertEquals(goldenString, description.toJsonElement().toString());
     }
