@@ -58,6 +58,9 @@ public class ChangeDescription
      * the cost for saveAsOsc)
      */
     private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
+    /** This improves performance for writing OSC files */
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory
+            .newInstance();
     private static final Logger logger = LoggerFactory.getLogger(ChangeDescription.class);
     private static final ChangeDescriptorComparator COMPARATOR = new ChangeDescriptorComparator();
 
@@ -390,10 +393,9 @@ public class ChangeDescription
             final Collection<JsonObject> modify, final Collection<JsonObject> delete)
             throws ParserConfigurationException, TransformerException
     {
-        final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setExpandEntityReferences(false);
+        DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
 
-        final DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
+        final DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
         final Document document = builder.newDocument();
         final Element rootElement = document.createElement("osmChange");
         rootElement.setAttribute(VERSION, "0.6");
