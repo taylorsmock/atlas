@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -74,6 +75,15 @@ import org.openstreetmap.atlas.utilities.collections.Iterables;
  */
 public class FeatureChange implements Located, Taggable, Serializable, Comparable<FeatureChange>
 {
+    /**
+     * Options to use for the feature change
+     */
+    public enum Options
+    {
+        /** This performs expensive calculations when {@link #withAtlasContext(Atlas)} is called */
+        OSC_IF_POSSIBLE
+    }
+
     private static final long serialVersionUID = 9172045162819925515L;
 
     private final String featureChangeIdentifier = UUID.randomUUID().toString();
@@ -87,6 +97,9 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      */
     private Collection<LocationItem> nodes;
     private Map<String, String> originalTags;
+
+    /** The options for this FeatureChange */
+    private final EnumSet<Options> options = EnumSet.noneOf(Options.class);
 
     /**
      * Create a new {@link ChangeType#ADD} {@link FeatureChange} with a given afterView. The
@@ -121,7 +134,31 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      */
     public static FeatureChange add(final AtlasEntity afterView, final Atlas atlasContext)
     {
-        return new FeatureChange(ChangeType.ADD, afterView).withAtlasContext(atlasContext);
+        return add(afterView, atlasContext, (Options) null);
+    }
+
+    /**
+     * Create a new {@link ChangeType#ADD} {@link FeatureChange} with a given after view. The
+     * afterView should be a {@link CompleteEntity} that specifies how the newly added or modified
+     * feature should look. For the modified case, the afterView {@link CompleteEntity} need only
+     * contain the fields that were modified. For ADDs that are adding a brand new feature, it
+     * should be fully populated. The atlasContext parameter creates a richer {@link FeatureChange}
+     * that contains information on how the entity looked before the update. This allows for more
+     * sophisticated merge logic.
+     *
+     * @param afterView
+     *            the after view {@link CompleteEntity}
+     * @param atlasContext
+     *            the atlas context
+     * @param options
+     *            The options for this {@link FeatureChange}
+     * @return the created {@link FeatureChange}
+     */
+    public static FeatureChange add(final AtlasEntity afterView, final Atlas atlasContext,
+            final Options... options)
+    {
+        return new FeatureChange(ChangeType.ADD, afterView).setOptions(options)
+                .withAtlasContext(atlasContext);
     }
 
     /**
@@ -153,23 +190,29 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      */
     public static FeatureChange remove(final AtlasEntity reference, final Atlas atlasContext)
     {
-        return new FeatureChange(ChangeType.REMOVE, reference).withAtlasContext(atlasContext);
+        return remove(reference, atlasContext, (Options) null);
     }
 
     /**
-     * Check if the entity can be part of a geometry change
+     * Create a new {@link ChangeType#REMOVE} {@link FeatureChange} using a given reference. The
+     * reference can be a shallow {@link CompleteEntity}, i.e. containing only the identifier of the
+     * feature to be removed. The atlasContext parameter creates a richer {@link FeatureChange} that
+     * contains information on how the entity looked before the update. This allows for more
+     * sophisticated merge logic.
      *
-     * @param entity
-     *            The entity to check (should be a CompleteLineItem or CompleteLocationItem)
-     * @return {@code true} if there are indications that the entity may be used for a geometry
-     *         change
+     * @param reference
+     *            the {@link CompleteEntity} to remove
+     * @param atlasContext
+     *            the atlas context
+     * @param options
+     *            The options for this {@link FeatureChange}
+     * @return the created {@link FeatureChange}
      */
-    private static boolean canBeGeometryChange(final AtlasEntity entity)
+    public static FeatureChange remove(final AtlasEntity reference, final Atlas atlasContext,
+            final Options... options)
     {
-        return (entity instanceof CompleteLineItem
-                && ((CompleteLineItem<?>) entity).getGeometry() != null)
-                || (entity instanceof CompleteLocationItem
-                        && ((CompleteLocationItem<?>) entity).getLocation() != null);
+        return new FeatureChange(ChangeType.REMOVE, reference).setOptions(options)
+                .withAtlasContext(atlasContext);
     }
 
     /**
@@ -710,6 +753,24 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
         new FeatureChangeGeoJsonSerializer(true, showDescription).accept(this, resource);
     }
 
+    /**
+     * Set the options for this FeatureChange. This should be called as soon as possible, and always
+     * before any method that the {@link FeatureChange.Options} specifies.
+     *
+     * @param options
+     *            the options to set. {@code null} clears the options.
+     * @return {@code this}, for easy chaining
+     */
+    public FeatureChange setOptions(final Options... options)
+    {
+        this.options.clear();
+        if (options != null)
+        {
+            Stream.of(options).filter(Objects::nonNull).forEach(this.options::add);
+        }
+        return this;
+    }
+
     public String toGeoJson()
     {
         return new FeatureChangeGeoJsonSerializer(false).convert(this);
@@ -750,9 +811,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
     public FeatureChange withAtlasContext(final Atlas atlas)
     {
         this.computeBeforeViewUsingAtlasContext(atlas, this.changeType);
-        // Only run if the geometry is indicated to have changed (this is fairly expensive, so
-        // should not be run normally)
-        if (canBeGeometryChange(this.afterView) || canBeGeometryChange(this.beforeView))
+        if (this.options.contains(Options.OSC_IF_POSSIBLE))
         {
             final long identifier = this.afterView.getIdentifier();
             // Don't keep the original object, as this keeps the atlas alive

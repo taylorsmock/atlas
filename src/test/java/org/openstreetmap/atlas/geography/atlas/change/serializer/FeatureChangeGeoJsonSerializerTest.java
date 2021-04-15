@@ -54,8 +54,8 @@ public class FeatureChangeGeoJsonSerializerTest
         final List<Location> points = Iterables.stream(waterway).collectToList();
         Collections.reverse(points);
         final FeatureChange featureChange = FeatureChange.add(
-                (AtlasEntity) CompleteLine.shallowFrom(waterway).withGeometry(points),
-                longWaterWay);
+                (AtlasEntity) CompleteLine.shallowFrom(waterway).withGeometry(points), longWaterWay,
+                FeatureChange.Options.OSC_IF_POSSIBLE);
 
         assertResourceEquals(featureChange, "serializedReverseWay.json", true);
     }

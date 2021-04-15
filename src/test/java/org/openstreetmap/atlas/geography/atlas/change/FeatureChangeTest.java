@@ -226,6 +226,7 @@ public class FeatureChangeTest
 
         final FeatureChange featureChange1 = new FeatureChange(ChangeType.ADD,
                 (AtlasEntity) reversedLine);
+        featureChange1.setOptions(FeatureChange.Options.OSC_IF_POSSIBLE);
         featureChange1.withAtlasContext(atlas);
 
         final ChangeDescription description = featureChange1.explain();
@@ -256,6 +257,7 @@ public class FeatureChangeTest
 
         final FeatureChange featureChange1 = new FeatureChange(ChangeType.ADD,
                 (AtlasEntity) reversedLine);
+        featureChange1.setOptions(FeatureChange.Options.OSC_IF_POSSIBLE);
         featureChange1.withAtlasContext(atlas);
 
         final ChangeDescription description = featureChange1.explain();
@@ -283,6 +285,7 @@ public class FeatureChangeTest
 
         final FeatureChange featureChange1 = new FeatureChange(ChangeType.REMOVE,
                 CompleteEntity.shallowFrom(line));
+        featureChange1.setOptions(FeatureChange.Options.OSC_IF_POSSIBLE);
         featureChange1.withAtlasContext(atlas);
 
         final ChangeDescription description = featureChange1.explain();
