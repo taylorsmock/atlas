@@ -1685,10 +1685,10 @@ public class RawAtlasSlicer
     private void slicePoint(final Point point)
     {
         if (point.getOsmTags().isEmpty()
-                && !this.pointsBelongingToEdge.contains(point.getIdentifier()))
+                && !this.pointsBelongingToEdge.contains(point.getIdentifier()) && !this.keepAll)
         {
             // we care about a point if and only if it has pre-existing OSM tags OR it belongs
-            // to a future edge
+            // to a future edge OR we are keeping all points for QC
             this.stagedPoints.remove(point.getIdentifier());
             this.changes.add(FeatureChange.remove(CompletePoint.shallowFrom(point)));
         }
@@ -1705,7 +1705,7 @@ public class RawAtlasSlicer
                 updatedPoint.withAddedTag(SyntheticBoundaryNodeTag.KEY,
                         SyntheticBoundaryNodeTag.EXISTING.toString());
             }
-            if (!this.isInCountry.test(updatedPoint))
+            if (!this.isInCountry.test(updatedPoint) && !this.keepAll)
             {
                 this.stagedPoints.remove(point.getIdentifier());
                 this.changes.add(FeatureChange.remove(updatedPoint, this.inputAtlas));
