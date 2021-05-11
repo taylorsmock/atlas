@@ -821,8 +821,8 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
             }
             else if (this.afterView instanceof Edge)
             {
-                final Edge edge = atlas.edge(identifier);
-                this.originalTags = null == edge ? null : getOsmTags(edge.getMainEdge());
+                final var edge = atlas.edge(identifier);
+                this.originalTags = edge == null ? null : getOsmTags(edge.getMainEdge());
             }
             else if (this.afterView instanceof Point)
             {

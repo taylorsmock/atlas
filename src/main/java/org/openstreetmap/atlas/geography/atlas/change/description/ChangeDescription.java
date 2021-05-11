@@ -14,10 +14,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -108,9 +106,9 @@ public class ChangeDescription
             final Collection<? extends LocationItem> nodes,
             @Nullable final Map<String, String> tags)
     {
-        final JsonObject information = new JsonObject();
+        final var information = new JsonObject();
         // Common requirements
-        if (0 < entity.getOsmIdentifier())
+        if (entity.getOsmIdentifier() > 0)
         {
             information.addProperty("id", entity.getOsmIdentifier());
         }
@@ -119,7 +117,7 @@ public class ChangeDescription
             information.addProperty("id", newId(entity.getIdentifier()));
         }
         // This is used to ensure that this will apply cleanly
-        if (null != entity.getTags())
+        if (entity.getTags() != null)
         {
             final Optional<String> lastEditVersion = entity.getTag("last_edit_version");
             lastEditVersion.ifPresent(s -> information.addProperty(VERSION, Long.parseLong(s) + 1));
@@ -127,11 +125,11 @@ public class ChangeDescription
         // Add the tags (OSC files are idempotent, in that they require <i>all</i> information for
         // an object)
         final Map<String, String> tagsToAdd;
-        if (null != tags)
+        if (tags != null)
         {
             tagsToAdd = tags;
         }
-        else if (null != entity.getTags() && !entity.getOsmTags().isEmpty())
+        else if (entity.getTags() != null && !entity.getOsmTags().isEmpty())
         {
             tagsToAdd = entity.getOsmTags();
         }
@@ -139,9 +137,9 @@ public class ChangeDescription
         {
             tagsToAdd = null;
         }
-        if (null != tagsToAdd)
+        if (tagsToAdd != null)
         {
-            final JsonObject tagsObject = new JsonObject();
+            final var tagsObject = new JsonObject();
             tagsToAdd.forEach(tagsObject::addProperty);
             information.add("tags", tagsObject);
         }
@@ -150,7 +148,7 @@ public class ChangeDescription
         {
             atlasEntityToOscInformationNode(information, (LocationItem) entity);
         }
-        else if (entity instanceof LineItem && null != ((LineItem) entity).asPolyLine())
+        else if (entity instanceof LineItem && ((LineItem) entity).asPolyLine() != null)
         {
             return atlasEntityToOscInformationWay(information, (LineItem) entity, nodes);
         }
@@ -192,11 +190,11 @@ public class ChangeDescription
         information.addProperty("type", RELATION);
         // Relations have an array of members
         // <relation><member type="node|way|relation" ref="id" role="role"/></relation>
-        final JsonArray members = new JsonArray();
+        final var members = new JsonArray();
         // Try to account for relations spread across atlases
         for (final RelationMember memberInformation : entity.allKnownOsmMembers())
         {
-            final JsonObject memberObject = new JsonObject();
+            final var memberObject = new JsonObject();
             final String type;
             if (memberInformation.getEntity() instanceof LocationItem)
             {
@@ -211,7 +209,7 @@ public class ChangeDescription
                 type = RELATION;
             }
             memberObject.addProperty("type", type);
-            if (0 < memberInformation.getEntity().getOsmIdentifier())
+            if (memberInformation.getEntity().getOsmIdentifier() > 0)
             {
                 memberObject.addProperty("ref", memberInformation.getEntity().getOsmIdentifier());
             }
@@ -240,7 +238,7 @@ public class ChangeDescription
         information.addProperty("type", "way");
         // Lines have an array of node references
         // <way><nd ref="-1"/><nd ref="-2"</></way>
-        final JsonArray nodeIds = new JsonArray();
+        final var nodeIds = new JsonArray();
         for (final Location location : entity.asPolyLine())
         {
             // Don't short-circuit on the first found, since there is no guarantee that it is
@@ -250,11 +248,11 @@ public class ChangeDescription
                     .collect(Collectors.toList());
             // Atlases don't store what nodes belong to what ways, so we cannot create an OSC
             // change for this way.
-            if (1 != foundNodes.stream().mapToLong(LocationItem::getIdentifier).distinct().count())
+            if (foundNodes.stream().mapToLong(LocationItem::getIdentifier).distinct().count() != 1)
             {
                 return null;
             }
-            if (0 < foundNodes.get(0).getOsmIdentifier())
+            if (foundNodes.get(0).getOsmIdentifier() > 0)
             {
                 nodeIds.add(new JsonPrimitive(foundNodes.get(0).getOsmIdentifier()));
             }
@@ -274,8 +272,8 @@ public class ChangeDescription
         {
             return;
         }
-        final String type = object.get("type").getAsString();
-        final Element objectElement = document.createElement(type);
+        final var type = object.get("type").getAsString();
+        final var objectElement = document.createElement(type);
         objectElement.setAttribute(VISIBLE, Optional.ofNullable(object.get(VISIBLE))
                 .orElse(new JsonPrimitive(true)).getAsString());
         objectElement.setAttribute("id",
@@ -291,7 +289,7 @@ public class ChangeDescription
             for (final Map.Entry<String, JsonElement> tag : object.get("tags").getAsJsonObject()
                     .entrySet())
             {
-                final Element tagElement = document.createElement("tag");
+                final var tagElement = document.createElement("tag");
                 tagElement.setAttribute("k", tag.getKey());
                 tagElement.setAttribute("v", tag.getValue().getAsString());
                 objectElement.appendChild(tagElement);
@@ -301,8 +299,8 @@ public class ChangeDescription
         {
             if (object.has("lat") && object.has("lon"))
             {
-                final double lat = object.get("lat").getAsDouble();
-                final double lon = object.get("lon").getAsDouble();
+                final var lat = object.get("lat").getAsDouble();
+                final var lon = object.get("lon").getAsDouble();
                 objectElement.setAttribute("lat", Double.toString(lat));
                 objectElement.setAttribute("lon", Double.toString(lon));
             }
@@ -314,7 +312,7 @@ public class ChangeDescription
             {
                 object.get("nd").getAsJsonArray().forEach(element ->
                 {
-                    final Element ndElement = document.createElement("nd");
+                    final var ndElement = document.createElement("nd");
                     ndElement.setAttribute("ref", element.getAsString());
                     objectElement.appendChild(ndElement);
                 });
@@ -327,8 +325,8 @@ public class ChangeDescription
             {
                 object.get(RELATION_MEMBER).getAsJsonArray().forEach(element ->
                 {
-                    final JsonObject member = element.getAsJsonObject();
-                    final Element memberElement = document.createElement(RELATION_MEMBER);
+                    final var member = element.getAsJsonObject();
+                    final var memberElement = document.createElement(RELATION_MEMBER);
                     memberElement.setAttribute("type", member.get("type").getAsString());
                     memberElement.setAttribute("ref", member.get("ref").getAsString());
                     memberElement.setAttribute("role", member.get("role").getAsString());
@@ -349,7 +347,7 @@ public class ChangeDescription
      */
     private static boolean hasOsmTags(final AtlasEntity entity)
     {
-        return null != entity.getTags() && null != entity.getOsmTags()
+        return entity.getTags() != null && entity.getOsmTags() != null
                 && !entity.getOsmTags().isEmpty();
     }
 
@@ -363,7 +361,7 @@ public class ChangeDescription
      */
     private static long newId(final long identifier)
     {
-        if (0 > identifier)
+        if (identifier < 0)
         {
             return identifier;
         }
@@ -395,39 +393,39 @@ public class ChangeDescription
     {
         DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
 
-        final DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
-        final Document document = builder.newDocument();
-        final Element rootElement = document.createElement("osmChange");
+        final var builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
+        final var document = builder.newDocument();
+        final var rootElement = document.createElement("osmChange");
         rootElement.setAttribute(VERSION, "0.6");
         // Increment the version when this code changes
         rootElement.setAttribute("generator", "atlas ChangeDescription v0.0.1");
         document.appendChild(rootElement);
         if (!create.isEmpty())
         {
-            final Element createElement = document.createElement("create");
+            final var createElement = document.createElement("create");
             create.forEach(
                     createObject -> createOscXmlElement(document, createElement, createObject));
             rootElement.appendChild(createElement);
         }
         if (!modify.isEmpty())
         {
-            final Element modifyElement = document.createElement("modify");
+            final var modifyElement = document.createElement("modify");
             modify.forEach(jsonObject -> createOscXmlElement(document, modifyElement, jsonObject));
             rootElement.appendChild(modifyElement);
         }
         if (!delete.isEmpty())
         {
-            final Element deleteElement = document.createElement("delete");
+            final var deleteElement = document.createElement("delete");
             delete.forEach(
                     deleteObject -> createOscXmlElement(document, deleteElement, deleteObject));
             rootElement.appendChild(deleteElement);
         }
         if (rootElement.hasChildNodes())
         {
-            final Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
-            final StringWriter stringWriter = new StringWriter();
+            final var transformer = TRANSFORMER_FACTORY.newTransformer();
+            final var stringWriter = new StringWriter();
             transformer.transform(new DOMSource(document), new StreamResult(stringWriter));
-            final String docString = stringWriter.getBuffer().toString();
+            final var docString = stringWriter.getBuffer().toString();
 
             // MapRoulette uses OSC in base64 encoded format, and this is a good way to ensure that
             // everything is in place
@@ -472,8 +470,8 @@ public class ChangeDescription
         this.itemType = itemType;
         this.descriptors = new ArrayList<>();
 
-        this.nodes = null != nodes ? nodes : Collections.emptyList();
-        this.originalTags = null != originalTags ? originalTags : Collections.emptyMap();
+        this.nodes = nodes != null ? nodes : Collections.emptyList();
+        this.originalTags = originalTags != null ? originalTags : Collections.emptyMap();
         // Avoid saving before/after views if we don't need them to generate the json (if no nodes,
         // then not needed)
         if (!this.nodes.isEmpty())
@@ -487,9 +485,9 @@ public class ChangeDescription
             this.beforeView = null;
         }
 
-        if (ChangeType.ADD == sourceFeatureChangeType)
+        if (sourceFeatureChangeType == ChangeType.ADD)
         {
-            if (null != beforeView)
+            if (beforeView != null)
             {
                 this.changeDescriptorType = ChangeDescriptorType.UPDATE;
             }
@@ -561,7 +559,7 @@ public class ChangeDescription
     public String toString()
     {
         this.descriptors.sort(COMPARATOR);
-        final StringBuilder builder = new StringBuilder(22 + 2 * JSON_LINE_SEPARATOR.length());
+        final var builder = new StringBuilder(22 + 2 * JSON_LINE_SEPARATOR.length());
         builder.append("ChangeDescription [");
         builder.append(JSON_LINE_SEPARATOR);
         builder.append(this.changeDescriptorType);
@@ -627,9 +625,9 @@ public class ChangeDescription
     private void oscCreateUpdate(final List<? super JsonObject> create,
             final Collection<? super JsonObject> modify)
     {
-        if ((ChangeDescriptorType.ADD == this.changeDescriptorType
-                || ChangeDescriptorType.UPDATE == this.changeDescriptorType)
-                && null != this.afterView)
+        if ((this.changeDescriptorType == ChangeDescriptorType.ADD
+                || this.changeDescriptorType == ChangeDescriptorType.UPDATE)
+                && this.afterView != null)
         {
             final Map<String, String> tags;
             if (!hasOsmTags(this.afterView) && !hasOsmTags(this.beforeView)
@@ -647,10 +645,10 @@ public class ChangeDescription
             }
             final JsonObject createObject = atlasEntityToOscInformation(this.afterView, this.nodes,
                     tags);
-            if (null != createObject)
+            if (createObject != null)
             {
                 createObject.addProperty(VISIBLE, true);
-                if (ChangeDescriptorType.ADD == this.changeDescriptorType)
+                if (this.changeDescriptorType == ChangeDescriptorType.ADD)
                 {
                     create.add(createObject);
                 }
@@ -673,11 +671,11 @@ public class ChangeDescription
     private void oscDelete(final List<JsonObject> delete,
             final Collection<Location> requiredLocations)
     {
-        if (ChangeDescriptorType.REMOVE == this.changeDescriptorType && null != this.beforeView)
+        if (this.changeDescriptorType == ChangeDescriptorType.REMOVE && this.beforeView != null)
         {
             final JsonObject deleteObject = atlasEntityToOscInformation(this.beforeView, this.nodes,
                     null);
-            if (null != deleteObject)
+            if (deleteObject != null)
             {
                 deleteObject.addProperty(VISIBLE, false);
                 // This helps ensure that we don't accidentally delete something if the OSC is
@@ -707,20 +705,20 @@ public class ChangeDescription
         // new ArrayList avoids a concurrent modification exception
         for (final JsonObject entityObject : new ArrayList<>(delete))
         {
-            if (null != entityObject.get("nd"))
+            if (entityObject.get("nd") != null)
             {
-                final JsonArray localNodes = entityObject.get("nd").getAsJsonArray();
+                final var localNodes = entityObject.get("nd").getAsJsonArray();
                 for (final JsonElement nodeElement : localNodes)
                 {
-                    final long nodeId = nodeElement.getAsLong();
+                    final var nodeId = nodeElement.getAsLong();
                     final LocationItem node = this.nodes.stream()
                             .filter(node1 -> node1.getOsmIdentifier() == nodeId).findAny()
-                            .filter(node1 -> null != node1.getTags())
+                            .filter(node1 -> node1.getTags() != null)
                             .filter(node1 -> node1.getOsmTags().isEmpty())
                             .filter(node1 -> !requiredLocations.contains(node1.getLocation()))
                             .orElse(null);
                     // Don't delete nodes with tags
-                    if (null != node)
+                    if (node != null)
                     {
                         final JsonObject nodeDelete = atlasEntityToOscInformation(node, null,
                                 Collections.emptyMap());
@@ -756,22 +754,22 @@ public class ChangeDescription
         for (final JsonObject entityObject : Stream.concat(create.stream(), modify.stream())
                 .collect(Collectors.toList()))
         {
-            if (null == entityObject.get("nd"))
+            if (entityObject.get("nd") == null)
             {
                 continue;
             }
-            final JsonArray localNodes = entityObject.get("nd").getAsJsonArray();
+            final var localNodes = entityObject.get("nd").getAsJsonArray();
             for (final JsonElement nodeElement : localNodes)
             {
-                final long nodeId = nodeElement.getAsLong();
+                final var nodeId = nodeElement.getAsLong();
                 final List<LocationItem> nodesFound = this.nodes.stream().filter(
                         node -> node.getIdentifier() == nodeId || node.getOsmIdentifier() == nodeId)
                         .collect(Collectors.toList());
-                if (1 != nodesFound.size())
+                if (nodesFound.size() != 1)
                 {
                     return false;
                 }
-                if (0 > nodeId)
+                if (nodeId < 0)
                 {
                     // New nodes should come prior to anything else
                     final JsonObject newNode = atlasEntityToOscInformation(nodesFound.get(0), null,
