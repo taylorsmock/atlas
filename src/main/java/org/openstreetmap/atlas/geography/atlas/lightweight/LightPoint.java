@@ -1,5 +1,6 @@
 package org.openstreetmap.atlas.geography.atlas.lightweight;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Relation;
  */
 public class LightPoint extends Point implements LightLocationItem<LightPoint>
 {
+    private static final byte HASH_BYTE = 31;
     private final long identifier;
     private final Location location;
     private final long[] relationIdentifiers;
@@ -86,6 +88,36 @@ public class LightPoint extends Point implements LightLocationItem<LightPoint>
     }
 
     @Override
+    public boolean equals(final Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        if (other == null || this.getClass() != other.getClass())
+        {
+            return false;
+        }
+        if (!super.equals(other))
+        {
+            return false;
+        }
+        final var lightPoint = (LightPoint) other;
+        if (this.location != null && lightPoint.location != null)
+        {
+            return this.identifier == lightPoint.identifier
+                    && this.location.equals(lightPoint.location)
+                    && Arrays.equals(this.relationIdentifiers, lightPoint.relationIdentifiers);
+        }
+        else if (this.location == null && lightPoint.location == null)
+        {
+            return this.identifier == lightPoint.identifier
+                    && Arrays.equals(this.relationIdentifiers, lightPoint.relationIdentifiers);
+        }
+        return false;
+    }
+
+    @Override
     public long getIdentifier()
     {
         return this.identifier;
@@ -101,6 +133,19 @@ public class LightPoint extends Point implements LightLocationItem<LightPoint>
     public long[] getRelationIdentifiers()
     {
         return this.relationIdentifiers.clone();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = super.hashCode();
+        if (this.location != null)
+        {
+            result = HASH_BYTE * result + this.location.hashCode();
+        }
+        result = HASH_BYTE * result + Long.hashCode(this.identifier);
+        result = HASH_BYTE * result + Arrays.hashCode(this.relationIdentifiers);
+        return result;
     }
 
     /**

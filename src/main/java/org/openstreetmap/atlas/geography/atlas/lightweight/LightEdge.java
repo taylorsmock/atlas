@@ -1,5 +1,6 @@
 package org.openstreetmap.atlas.geography.atlas.lightweight;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -18,6 +19,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Relation;
  */
 public class LightEdge extends Edge implements LightLineItem<LightEdge>
 {
+    private static final byte HASH_BYTE = 31;
     private final long identifier;
     private final long[] relationIdentifiers;
     private final long startNodeIdentifier;
@@ -96,6 +98,29 @@ public class LightEdge extends Edge implements LightLineItem<LightEdge>
     }
 
     @Override
+    public boolean equals(final Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        if (other == null || this.getClass() != other.getClass())
+        {
+            return false;
+        }
+        if (!super.equals(other))
+        {
+            return false;
+        }
+        final var lightEdge = (LightEdge) other;
+        return this.identifier == lightEdge.identifier
+                && this.startNodeIdentifier == lightEdge.startNodeIdentifier
+                && this.endNodeIdentifier == lightEdge.endNodeIdentifier
+                && Arrays.equals(this.relationIdentifiers, lightEdge.relationIdentifiers)
+                && Arrays.equals(this.pointLocations, lightEdge.pointLocations);
+    }
+
+    @Override
     public long getIdentifier()
     {
         return this.identifier;
@@ -105,6 +130,18 @@ public class LightEdge extends Edge implements LightLineItem<LightEdge>
     public long[] getRelationIdentifiers()
     {
         return this.relationIdentifiers.clone();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = super.hashCode();
+        result = HASH_BYTE * result + Long.hashCode(this.identifier);
+        result = HASH_BYTE * result + Long.hashCode(this.startNodeIdentifier);
+        result = HASH_BYTE * result + Long.hashCode(this.endNodeIdentifier);
+        result = HASH_BYTE * result + Arrays.hashCode(this.relationIdentifiers);
+        result = HASH_BYTE * result + Arrays.hashCode(this.pointLocations);
+        return result;
     }
 
     @Override

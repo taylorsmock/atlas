@@ -1,5 +1,6 @@
 package org.openstreetmap.atlas.geography.atlas.lightweight;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -19,6 +20,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Relation;
  */
 public class LightNode extends Node implements LightLocationItem<LightNode>
 {
+    private static final byte HASH_BYTE = 31;
     private final long identifier;
     private final Location location;
     private final long[] inEdgeIdentifiers;
@@ -86,6 +88,40 @@ public class LightNode extends Node implements LightLocationItem<LightNode>
     }
 
     @Override
+    public boolean equals(final Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        if (other == null || this.getClass() != other.getClass())
+        {
+            return false;
+        }
+        if (!super.equals(other))
+        {
+            return false;
+        }
+        final var lightNode = (LightNode) other;
+        if (this.location != null && lightNode.location != null)
+        {
+            return this.identifier == lightNode.identifier
+                    && this.location.equals(lightNode.location)
+                    && Arrays.equals(this.inEdgeIdentifiers, lightNode.inEdgeIdentifiers)
+                    && Arrays.equals(this.outEdgeIdentifiers, lightNode.outEdgeIdentifiers)
+                    && Arrays.equals(this.relationIdentifiers, lightNode.relationIdentifiers);
+        }
+        else if (this.location == null && lightNode.location == null)
+        {
+            return this.identifier == lightNode.identifier
+                    && Arrays.equals(this.inEdgeIdentifiers, lightNode.inEdgeIdentifiers)
+                    && Arrays.equals(this.outEdgeIdentifiers, lightNode.outEdgeIdentifiers)
+                    && Arrays.equals(this.relationIdentifiers, lightNode.relationIdentifiers);
+        }
+        return false;
+    }
+
+    @Override
     public long getIdentifier()
     {
         return this.identifier;
@@ -121,6 +157,21 @@ public class LightNode extends Node implements LightLocationItem<LightNode>
     public long[] getRelationIdentifiers()
     {
         return this.relationIdentifiers.clone();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = super.hashCode();
+        result = HASH_BYTE * result + Long.hashCode(this.identifier);
+        if (this.location != null)
+        {
+            result = HASH_BYTE * result + this.location.hashCode();
+        }
+        result = HASH_BYTE * result + Arrays.hashCode(this.inEdgeIdentifiers);
+        result = HASH_BYTE * result + Arrays.hashCode(this.outEdgeIdentifiers);
+        result = HASH_BYTE * result + Arrays.hashCode(this.relationIdentifiers);
+        return result;
     }
 
     /**

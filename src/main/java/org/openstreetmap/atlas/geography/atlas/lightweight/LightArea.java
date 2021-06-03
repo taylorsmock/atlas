@@ -1,5 +1,6 @@
 package org.openstreetmap.atlas.geography.atlas.lightweight;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -17,6 +18,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Relation;
  */
 public class LightArea extends Area implements LightLineItem<LightArea>
 {
+    private static final byte HASH_BYTE = 31;
     private final long identifier;
     private final long[] relationIdentifiers;
     private final Location[] locations;
@@ -82,6 +84,27 @@ public class LightArea extends Area implements LightLineItem<LightArea>
     }
 
     @Override
+    public boolean equals(final Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        if (other == null || this.getClass() != other.getClass())
+        {
+            return false;
+        }
+        if (!super.equals(other))
+        {
+            return false;
+        }
+        final var lightArea = (LightArea) other;
+        return this.identifier == lightArea.identifier
+                && Arrays.equals(this.relationIdentifiers, lightArea.relationIdentifiers)
+                && Arrays.equals(this.locations, lightArea.locations);
+    }
+
+    @Override
     public long getIdentifier()
     {
         return this.identifier;
@@ -91,6 +114,16 @@ public class LightArea extends Area implements LightLineItem<LightArea>
     public long[] getRelationIdentifiers()
     {
         return this.relationIdentifiers.clone();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = super.hashCode();
+        result = HASH_BYTE * result + Long.hashCode(this.identifier);
+        result = HASH_BYTE * result + Arrays.hashCode(this.relationIdentifiers);
+        result = HASH_BYTE * result + Arrays.hashCode(this.locations);
+        return result;
     }
 
     /**
