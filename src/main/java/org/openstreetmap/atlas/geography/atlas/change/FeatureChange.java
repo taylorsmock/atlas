@@ -34,7 +34,6 @@ import org.openstreetmap.atlas.geography.atlas.complete.CompleteEntity;
 import org.openstreetmap.atlas.geography.atlas.complete.CompleteLineItem;
 import org.openstreetmap.atlas.geography.atlas.complete.CompleteLocationItem;
 import org.openstreetmap.atlas.geography.atlas.complete.CompleteNode;
-import org.openstreetmap.atlas.geography.atlas.complete.CompletePoint;
 import org.openstreetmap.atlas.geography.atlas.complete.CompleteRelation;
 import org.openstreetmap.atlas.geography.atlas.complete.PrettifyStringFormat;
 import org.openstreetmap.atlas.geography.atlas.items.Area;
@@ -48,6 +47,8 @@ import org.openstreetmap.atlas.geography.atlas.items.LocationItem;
 import org.openstreetmap.atlas.geography.atlas.items.Node;
 import org.openstreetmap.atlas.geography.atlas.items.Point;
 import org.openstreetmap.atlas.geography.atlas.items.Relation;
+import org.openstreetmap.atlas.geography.atlas.lightweight.LightEntity;
+import org.openstreetmap.atlas.geography.atlas.lightweight.LightPoint;
 import org.openstreetmap.atlas.streaming.resource.WritableResource;
 import org.openstreetmap.atlas.tags.Taggable;
 import org.openstreetmap.atlas.utilities.collections.Iterables;
@@ -870,13 +871,12 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
             if (possibleNodes == 1)
             {
                 // CompletePoint and CompleteNode both extend Point and Node respectively
-                this.nodes.add((LocationItem) CompleteEntity.from(locationItems.get(0)));
+                this.nodes.add((LocationItem) LightEntity.from(locationItems.get(0)));
             }
             else if (possibleNodes == 0)
             {
                 // OK. New node.
-                this.nodes.add(new CompletePoint(currentNewId, point, Collections.emptyMap(),
-                        Collections.emptySet()));
+                this.nodes.add(new LightPoint(currentNewId, point, Collections.emptySet()));
                 currentNewId--;
             }
             else
