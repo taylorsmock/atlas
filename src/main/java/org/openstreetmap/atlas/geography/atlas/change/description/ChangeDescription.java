@@ -87,6 +87,7 @@ public class ChangeDescription
     private final Map<String, String> originalTags;
     private final AtlasEntity afterView;
     private final AtlasEntity beforeView;
+    private String osc;
 
     /**
      * Convert an entity to a JsonObject which can be used to create an OSC file. Note: You still
@@ -429,9 +430,22 @@ public class ChangeDescription
 
             // MapRoulette uses OSC in base64 encoded format, and this is a good way to ensure that
             // everything is in place
-            description.add("osc", new JsonPrimitive(Base64.getEncoder()
-                    .encodeToString(docString.getBytes(StandardCharsets.UTF_8))));
+            saveOsc(description,
+                    Base64.getEncoder().encodeToString(docString.getBytes(StandardCharsets.UTF_8)));
         }
+    }
+
+    /**
+     * Save OSC to a JsonObject
+     *
+     * @param description
+     *            The object to save to
+     * @param osc
+     *            The osc to save
+     */
+    private static void saveOsc(final JsonObject description, final String osc)
+    {
+        description.add("osc", new JsonPrimitive(osc));
     }
 
     public ChangeDescription(final long identifier, final ItemType itemType,
@@ -540,6 +554,18 @@ public class ChangeDescription
         return this.itemType;
     }
 
+    /**
+     * Set the OSC information (this is for deserialization, please do not call when not
+     * deserializing)
+     *
+     * @param osc
+     *            The osc to set (base64 encoded)
+     */
+    public void setOsc(final String osc)
+    {
+        this.osc = osc;
+    }
+
     public JsonElement toJsonElement()
     {
         final JsonObject description = new JsonObject();
@@ -551,7 +577,14 @@ public class ChangeDescription
         }
         description.add("descriptors", descriptorArray);
 
-        this.createOsc(description);
+        if (this.osc == null)
+        {
+            this.createOsc(description);
+        }
+        else
+        {
+            saveOsc(description, this.osc);
+        }
         return description;
     }
 

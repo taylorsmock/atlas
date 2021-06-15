@@ -98,6 +98,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
      */
     private Collection<LocationItem> nodes;
     private Map<String, String> originalTags;
+    private String osc;
 
     /** The options for this FeatureChange */
     private final EnumSet<Options> options = EnumSet.noneOf(Options.class);
@@ -218,7 +219,7 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
 
     /**
      * Get the OSM tags from an entity, {@code null} save
-     * 
+     *
      * @param entity
      *            The entity to get tags from
      * @return The tags
@@ -438,8 +439,14 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
         {
             throw new CoreException("Cannot explain a FeatureChange with a null afterView!");
         }
-        return new ChangeDescription(getIdentifier(), getItemType(), this.beforeView,
-                this.afterView, this.changeType, this.originalTags, this.nodes);
+        final var changeDescription = new ChangeDescription(this.getIdentifier(),
+                this.getItemType(), this.beforeView, this.afterView, this.changeType,
+                this.originalTags, this.nodes);
+        if (this.osc != null)
+        {
+            changeDescription.setOsc(this.osc);
+        }
+        return changeDescription;
     }
 
     public AtlasEntity getAfterView()
@@ -843,6 +850,19 @@ public class FeatureChange implements Located, Taggable, Serializable, Comparabl
             }
             this.computeRequiredOpenStreetMapChangeInformation(atlas, this.changeType);
         }
+        return this;
+    }
+
+    /**
+     * Use the OSC information for OpenStreetMap diffs. Used by deserialization.
+     *
+     * @param osc
+     *            The OSC to use
+     * @return this, for easy chaining
+     */
+    public FeatureChange withOsc(final String osc)
+    {
+        this.osc = osc;
         return this;
     }
 
