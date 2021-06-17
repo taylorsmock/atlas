@@ -555,6 +555,16 @@ public class ChangeDescription
     }
 
     /**
+     * Get the OSC, if one exists
+     *
+     * @return An optional with the osc, if present
+     */
+    public Optional<String> getOsc()
+    {
+        return Optional.ofNullable(this.osc);
+    }
+
+    /**
      * Set the OSC information (this is for deserialization, please do not call when not
      * deserializing)
      *
