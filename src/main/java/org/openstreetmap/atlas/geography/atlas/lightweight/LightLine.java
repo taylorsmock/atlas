@@ -82,7 +82,11 @@ public class LightLine extends Line implements LightLineItem<LightLine>
     @Override
     public PolyLine asPolyLine()
     {
-        return new PolyLine(this.locations);
+        if (this.locations.length > 0)
+        {
+            return new PolyLine(this.locations);
+        }
+        return null;
     }
 
     @Override
@@ -93,10 +97,6 @@ public class LightLine extends Line implements LightLineItem<LightLine>
             return true;
         }
         if (other == null || this.getClass() != other.getClass())
-        {
-            return false;
-        }
-        if (!super.equals(other))
         {
             return false;
         }

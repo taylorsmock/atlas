@@ -5,11 +5,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import javax.annotation.Nullable;
+
 import org.openstreetmap.atlas.geography.Location;
+import org.openstreetmap.atlas.geography.PolyLine;
 import org.openstreetmap.atlas.geography.Polygon;
 import org.openstreetmap.atlas.geography.atlas.complete.EmptyAtlas;
 import org.openstreetmap.atlas.geography.atlas.items.Area;
 import org.openstreetmap.atlas.geography.atlas.items.Relation;
+import org.openstreetmap.atlas.utilities.collections.Iterables;
 
 /**
  * A lightweight area.
@@ -78,9 +82,25 @@ public class LightArea extends Area implements LightLineItem<LightArea>
     }
 
     @Override
+    @Nullable
+    public PolyLine asPolyLine()
+    {
+        if (this.locations.length > 0)
+        {
+            return new PolyLine(this.locations);
+        }
+        return null;
+    }
+
+    @Override
+    @Nullable
     public Polygon asPolygon()
     {
-        return new Polygon(this.locations);
+        if (this.locations.length > 0)
+        {
+            return new Polygon(this.locations);
+        }
+        return null;
     }
 
     @Override
@@ -102,6 +122,17 @@ public class LightArea extends Area implements LightLineItem<LightArea>
         return this.identifier == lightArea.identifier
                 && Arrays.equals(this.relationIdentifiers, lightArea.relationIdentifiers)
                 && Arrays.equals(this.locations, lightArea.locations);
+    }
+
+    @Nullable
+    @Override
+    public Iterable<Location> getGeometry()
+    {
+        if (this.locations.length > 0)
+        {
+            return Iterables.asList(this.locations);
+        }
+        return null;
     }
 
     @Override

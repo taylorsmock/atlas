@@ -87,14 +87,22 @@ public class LightEdge extends Edge implements LightLineItem<LightEdge>
     @Override
     public PolyLine asPolyLine()
     {
-        return new PolyLine(this.pointLocations);
+        if (this.pointLocations.length > 0)
+        {
+            return new PolyLine(this.pointLocations);
+        }
+        return null;
     }
 
     @Override
     public Node end()
     {
-        return new LightNode(this.endNodeIdentifier,
-                this.pointLocations[this.pointLocations.length - 1]);
+        if (this.pointLocations.length > 0)
+        {
+            return new LightNode(this.endNodeIdentifier,
+                    this.pointLocations[this.pointLocations.length - 1]);
+        }
+        return null;
     }
 
     @Override
@@ -154,6 +162,10 @@ public class LightEdge extends Edge implements LightLineItem<LightEdge>
     @Override
     public Node start()
     {
-        return new LightNode(this.startNodeIdentifier, this.pointLocations[0]);
+        if (this.pointLocations.length > 0)
+        {
+            return new LightNode(this.startNodeIdentifier, this.pointLocations[0]);
+        }
+        return null;
     }
 }

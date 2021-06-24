@@ -98,10 +98,6 @@ public class LightPoint extends Point implements LightLocationItem<LightPoint>
         {
             return false;
         }
-        if (!super.equals(other))
-        {
-            return false;
-        }
         final var lightPoint = (LightPoint) other;
         if (this.location != null && lightPoint.location != null)
         {

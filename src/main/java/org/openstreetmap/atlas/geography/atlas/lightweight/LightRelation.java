@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
 
 import org.openstreetmap.atlas.exception.CoreException;
 import org.openstreetmap.atlas.geography.Location;
@@ -132,10 +135,6 @@ public class LightRelation extends Relation implements LightEntity<LightRelation
         {
             return false;
         }
-        if (!super.equals(other))
-        {
-            return false;
-        }
         final var that = (LightRelation) other;
         return this.identifier == that.identifier
                 && Arrays.equals(this.relationIdentifiers, that.relationIdentifiers)
@@ -143,6 +142,13 @@ public class LightRelation extends Relation implements LightEntity<LightRelation
                 && Arrays.equals(this.memberTypes, that.memberTypes)
                 && Arrays.equals(this.memberRoles, that.memberRoles)
                 && Arrays.deepEquals(this.memberLocations, that.memberLocations);
+    }
+
+    @Nullable
+    @Override
+    public Iterable<Location> getGeometry()
+    {
+        return Stream.of(this.memberLocations).flatMap(Stream::of).collect(Collectors.toList());
     }
 
     @Override

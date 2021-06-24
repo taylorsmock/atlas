@@ -1,5 +1,7 @@
 package org.openstreetmap.atlas.geography.atlas.lightweight;
 
+import javax.annotation.Nullable;
+
 import org.openstreetmap.atlas.exception.CoreException;
 import org.openstreetmap.atlas.geography.Location;
 import org.openstreetmap.atlas.geography.atlas.items.Area;
@@ -62,6 +64,14 @@ public interface LightEntity<C extends LightEntity<C>>
                 throw new CoreException("Unknown ItemType {}", type);
         }
     }
+
+    /**
+     * Get the geometry of the entity
+     *
+     * @return The geometry
+     */
+    @Nullable
+    Iterable<Location> getGeometry();
 
     /**
      * Get relation identifiers

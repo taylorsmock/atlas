@@ -98,10 +98,6 @@ public class LightNode extends Node implements LightLocationItem<LightNode>
         {
             return false;
         }
-        if (!super.equals(other))
-        {
-            return false;
-        }
         final var lightNode = (LightNode) other;
         if (this.location != null && lightNode.location != null)
         {
